@@ -20,14 +20,16 @@ except:
 
 #List of queries (stop ID, route ID):
 ROUTES = [(2546, 86), #Washington & Beacon to Sullivan
-          (2570, 86)] #Washington & Beacon to Reservoir
+          (2570, 86), #Washington & Beacon to Reservoir
+          (2435, 83),
+          (2455, 83)]
 
 FONT_SIZE=17
 Y_SHIFT=16
 #These configs allow for 5 lines of text on screen and 16 characters
 
 try:
-    papirusText = PapirusTextPos(rotation=0)
+    papirusText = PapirusTextPos(False, rotation=0)
 except:
     pass
 
@@ -67,7 +69,7 @@ def query(stop_id, route_id):
         time_str = "Now"
     else:
         time_str = strfdelta(first_arrival - now)
-    return(f"{route_id} to {destinations[direction]}: {time_str}")
+    return(f"{route_id}-{destinations[direction]}: {time_str}")
 
 def send_to_papirus(str_set):
     y = 0
