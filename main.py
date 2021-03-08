@@ -46,7 +46,10 @@ def simple_test():
     first_arrival = pd.Timestamp(first_arrival)
     now = pd.Timestamp("now")
     now = now.tz_localize(first_arrival.tz)
-    time_str = strfdelta(first_arrival - now)
+    if first_arrival < now:
+        time_str = "Now"
+    else:
+        time_str = strfdelta(first_arrival - now)
     try:
         send_to_papirus("86 to Sullivan: " + time_str)
     except:
