@@ -63,9 +63,14 @@ def query(stop_id, route_id):
                                       "filter[route]":route_id}, headers=headers)
     predictions = r.json()
     try:
-        first_arrival = predictions["data"][0]["attributes"]["arrival_time"]
-        direction = predictions["data"][0]["attributes"]["direction_id"]
-        first_arrival = pd.Timestamp(first_arrival)
+        #Find first non-NaT arrival
+        index = 0
+        first_arrival = pd.NaT
+        while pd.isnull(first_arrival):
+            first_arrival = predictions["data"][index]["attributes"]["arrival_time"]
+            direction = predictions["data"][index]["attributes"]["direction_id"]
+            first_arrival = pd.Timestamp(first_arrival)
+            index +=1
         now = pd.Timestamp("now")
         now = now.tz_localize(first_arrival.tz)
         if first_arrival < now:
