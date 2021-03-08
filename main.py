@@ -2,6 +2,7 @@ import requests
 import os
 import pandas as pd
 import logging
+import time
 try:
     from papirus import PapirusTextPos
     PAPIRUS_ENABLED = True
@@ -61,21 +62,28 @@ def query(stop_id, route_id):
     r = requests.get(url=MBTA_URL+"/predictions",params={"filter[stop]":stop_id,
                                       "filter[route]":route_id}, headers=headers)
     predictions = r.json()
-    first_arrival = predictions["data"][0]["attributes"]["arrival_time"]
-    direction = predictions["data"][0]["attributes"]["direction_id"]
-    first_arrival = pd.Timestamp(first_arrival)
-    now = pd.Timestamp("now")
-    now = now.tz_localize(first_arrival.tz)
-    if first_arrival < now:
-        time_str = "Now"
-    else:
-        time_str = strfdelta(first_arrival - now)
+    try:
+        first_arrival = predictions["data"][0]["attributes"]["arrival_time"]
+        direction = predictions["data"][0]["attributes"]["direction_id"]
+        first_arrival = pd.Timestamp(first_arrival)
+        now = pd.Timestamp("now")
+        now = now.tz_localize(first_arrival.tz)
+        if first_arrival < now:
+            time_str = "Now"
+        else:
+            time_str = strfdelta(first_arrival - now)
+    except IndexError:
+        #No prediction; usually no more buses for the day
+        return None
+
     return(f"{route_id}-{destinations[direction]}: {time_str}")
 
 def send_to_papirus(str_set):
     y = 0
     papirusText.Clear()
     for str in str_set:
+        if str is None:
+            continue
         papirusText.AddText(str, 0, y, size=FONT_SIZE)
         y += Y_SHIFT
     papirusText.WriteAll()
@@ -95,5 +103,8 @@ if __name__=="__main__":
             send_to_papirus(display_strs)
         else:
             for str in display_strs:
+                if str is None:
+                    print("None")
+                    continue
                 print(str, len(str))
         time.sleep(30)
