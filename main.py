@@ -23,6 +23,7 @@ ROUTES = [(2546, 86), #Washington & Beacon to Sullivan
           (2570, 86), #Washington & Beacon to Reservoir
           (2435, 83),
           (2455, 83)]
+INCLUDE_TIME = True
 
 FONT_SIZE=17
 Y_SHIFT=16
@@ -81,11 +82,18 @@ def send_to_papirus(str_set):
 
 
 if __name__=="__main__":
-    display_strs = []
-    for stop_id, route_id in ROUTES:
-        display_strs.append(query(stop_id, route_id))
-    if PAPIRUS_ENABLED:
-        send_to_papirus(display_strs)
-    else:
-        for str in display_strs:
-            print(str, len(str))
+    while True:
+        display_strs = []
+        for stop_id, route_id in ROUTES:
+            display_strs.append(query(stop_id, route_id))
+
+        if INCLUDE_TIME:
+            now = pd.Timestamp("now")
+            display_strs.append(now.strftime("%a %b %d %I:%M %p").replace(" 0", " "))
+
+        if PAPIRUS_ENABLED:
+            send_to_papirus(display_strs)
+        else:
+            for str in display_strs:
+                print(str, len(str))
+        time.sleep(30)
