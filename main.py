@@ -3,6 +3,7 @@ import os
 import pandas as pd
 import logging
 import time
+from urllib3.exceptions import NewConnectionError
 try:
     from papirus import PapirusTextPos
     PAPIRUS_ENABLED = True
@@ -10,6 +11,7 @@ except:
     logging.error("No Papirus found! Will output to stdout.")
     PAPIRUS_ENABLED = False
 
+VERBOSE=False
 MBTA_URL = "https://api-v3.mbta.com/"
 
 try:
@@ -54,14 +56,17 @@ def query(stop_id, route_id):
         headers["x-api-key"] = API_KEY
 
     #Get route destinations
-    r = requests.get(url=MBTA_URL+f"/routes/{route_id}", headers=headers)
-    route = r.json()
-    destinations = route["data"]["attributes"]["direction_destinations"]
-    #Trim destinations to the first word.
-    destinations = [x.split(" ")[0] for x in destinations]
-    r = requests.get(url=MBTA_URL+"/predictions",params={"filter[stop]":stop_id,
-                                      "filter[route]":route_id}, headers=headers)
-    predictions = r.json()
+    try:
+        r = requests.get(url=MBTA_URL+f"/routes/{route_id}", headers=headers)
+        route = r.json()
+        destinations = route["data"]["attributes"]["direction_destinations"]
+        #Trim destinations to the first word.
+        destinations = [x.split(" ")[0] for x in destinations]
+        r = requests.get(url=MBTA_URL+"/predictions",params={"filter[stop]":stop_id,
+                                          "filter[route]":route_id}, headers=headers)
+        predictions = r.json()
+    except NewConnectionError:
+        return None
     try:
         #Find first non-NaT arrival
         index = 0
@@ -73,6 +78,8 @@ def query(stop_id, route_id):
             index +=1
         now = pd.Timestamp("now")
         now = now.tz_localize(first_arrival.tz)
+        if VERBOSE:
+            print(now, first_arrival, stop_id, route_id)
         if first_arrival < now:
             time_str = "Now"
         else:
